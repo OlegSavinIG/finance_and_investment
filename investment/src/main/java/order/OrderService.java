@@ -12,7 +12,11 @@ public interface OrderService {
 
     OrderResponse updateOrder(Long userId, Long orderId, OrderRequestUpdate updateRequest);
 
-    List<OrderResponse> getOrders(Long userId, Integer from, Integer size, SortByField sortByField, SortDirection sortDirection);
+    List<OrderResponse> getOrders(
+            Long userId, Integer from, Integer size,
+            SortByField sortByField, SortDirection sortDirection);
 
-    List<OrderResponse> searchOrders(Long userId, OrderSearchCriteria searchCriteria);
+    List<OrderResponse> searchOrders(
+            Long userId, OrderSearchCriteria searchCriteria, SortByField sortByField,
+            SortDirection sortDirection, Integer from, Integer size);
 }

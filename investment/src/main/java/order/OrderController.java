@@ -52,9 +52,15 @@ public class OrderController {
     @GetMapping("/{userId}/search")
     public ResponseEntity<List<OrderResponse>> searchOrders(
             @PathVariable Long userId,
-            @Valid @ModelAttribute OrderSearchCriteria searchCriteria
+            @ModelAttribute OrderSearchCriteria searchCriteria,
+            @PositiveOrZero @RequestParam(defaultValue = "0")
+            Integer from,
+            @Positive @RequestParam(defaultValue = "10")
+            Integer size,
+            @RequestParam(defaultValue = "CREATION_TIME")SortByField sortByField,
+            @RequestParam(defaultValue = "ASC")SortDirection sortDirection
     ) {
         return ResponseEntity.ok(
-                service.searchOrders(userId, searchCriteria));
+                service.searchOrders(userId, searchCriteria, sortByField, sortDirection, from, size));
     }
 }

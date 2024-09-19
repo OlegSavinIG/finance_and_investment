@@ -3,11 +3,13 @@ package order;
 import checker.ExistChecker;
 import lombok.RequiredArgsConstructor;
 import oleg.savin.finance.user.UserRepository;
+import order.searchcriteria.OrderSpecifications;
 import order.searchcriteria.SortByField;
 import order.searchcriteria.SortDirection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import user.UserEntity;
@@ -34,7 +36,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public OrderResponse updateOrder(Long userId, Long orderId, OrderRequestUpdate updateRequest) {
+    public OrderResponse updateOrder(
+            Long userId, Long orderId, OrderRequestUpdate updateRequest) {
         checker.isUserExist(userId);
         checker.isOrderExist(orderId);
         checker.isUserOwnerOfOrder(userId, orderId);
@@ -49,9 +52,9 @@ public class OrderServiceImpl implements OrderService {
             Long userId, Integer from, Integer size,
             SortByField sortByField, SortDirection sortDirection) {
         checker.isUserExist(userId);
-        Sort.Direction direction = sortDirection == SortDirection.DESC ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Sort sortParameters = getSortParameters(sortByField, sortDirection);
         Page<OrderEntity> orderEntities = repository.findByOwnerId(
-                userId, PageRequest.of(from/size, size, Sort.by(direction, sortByField.getFieldName()))
+                userId, PageRequest.of(from / size, size, sortParameters)
         );
         return orderEntities.stream()
                 .map(OrderMapper.INSTANCE::toResponse)
@@ -59,11 +62,30 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public List<OrderResponse> searchOrders(Long userId, OrderSearchCriteria searchCriteria) {
-        return null;
+    public List<OrderResponse> searchOrders(
+            Long userId, OrderSearchCriteria searchCriteria,
+            SortByField sortByField, SortDirection sortDirection,
+            Integer from, Integer size) {
+        checker.isUserExist(userId);
+        Sort sortParameters = getSortParameters(sortByField, sortDirection);
+        Specification<OrderEntity> specification =
+                OrderSpecifications.searchByCriteria(userId, searchCriteria);
+        Page<OrderEntity> entities = repository.findAll(
+                specification, PageRequest.of(from / size, size, sortParameters));
+        return entities.stream()
+                .map(OrderMapper.INSTANCE::toResponse)
+                .collect(Collectors.toList());
     }
 
-    private OrderEntity updateOrderFields(OrderEntity entity, OrderRequestUpdate updateRequest) {
+    private Sort getSortParameters(
+            SortByField sortByField, SortDirection sortDirection) {
+        Sort.Direction direction =
+                sortDirection == SortDirection.DESC ? Sort.Direction.DESC : Sort.Direction.ASC;
+        return Sort.by(direction, sortByField.getFieldName());
+    }
+
+    private OrderEntity updateOrderFields(
+            OrderEntity entity, OrderRequestUpdate updateRequest) {
         if (updateRequest.getTicker() != null) {
             entity.setTicker(updateRequest.getTicker());
         }
