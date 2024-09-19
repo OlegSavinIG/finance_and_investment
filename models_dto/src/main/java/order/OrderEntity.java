@@ -8,11 +8,15 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import user.UserEntity;
 
 import java.time.LocalDateTime;
 
@@ -30,13 +34,16 @@ public class OrderEntity {
     @Enumerated(EnumType.STRING)
     private LongShort type;
     private Integer sum;
-    @Column(name = "creation")
+    @Column(name = "creationTime")
     @JsonFormat(shape = JsonFormat.Shape.STRING,
             pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime creationTime;
-    @Column(name = "closed")
+    @Column(name = "closedTime")
     @JsonFormat(shape = JsonFormat.Shape.STRING,
             pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime closedTime;
     private Integer result;
+    @ManyToOne()
+    @JoinColumn(name = "user_id", nullable = false)
+    private UserEntity owner;
 }
