@@ -33,6 +33,7 @@ public class OrderEntity {
     private String ticker;
     @Enumerated(EnumType.STRING)
     private LongShort type;
+    @Column(name = "sum")
     private Integer sum;
     @Column(name = "creationTime")
     @JsonFormat(shape = JsonFormat.Shape.STRING,
