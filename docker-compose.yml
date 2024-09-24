@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # PostgreSQL - Основная база данных
+  postgres-db:
+    image: postgres:15
+    container_name: postgres-db
+    environment:
+      POSTGRES_DB: main_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: main_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - db-network
+
+  # MongoDB - Хранение ордеров и финансовой статистики
+  mongo-db:
+    image: mongo:6.0
+    container_name: mongo-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - db-network
+
+  # ClickHouse - Аналитика действий с ордерами
+  clickhouse-db:
+    image: yandex/clickhouse-server:latest
+    container_name: clickhouse-db
+    ports:
+      - "8123:8123"  # HTTP интерфейс ClickHouse
+      - "9000:9000"  # TCP интерфейс ClickHouse
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+    networks:
+      - db-network
+
+networks:
+  db-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  mongo-data:
+  clickhouse-data:
