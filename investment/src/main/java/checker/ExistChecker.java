@@ -19,14 +19,14 @@ public class ExistChecker {
                     String.format("User with id:%d not exist", userId));
         }
     }
-    public void isOrderExist(long orderId) {
+    public void isOrderExist(String orderId) {
         boolean existsById = orderRepository.existsById(orderId);
         if (!existsById) {
             throw new EntityNotFoundException(
                     String.format("Order with id:%d not exist", orderId));
         }
     }
-    public void isUserOwnerOfOrder(long userId, long orderId){
+    public void isUserOwnerOfOrder(long userId, String orderId){
         boolean exists = orderRepository.existsByIdAndOwnerId(orderId, userId);
         if (!exists) {
             throw new EntityNotFoundException(

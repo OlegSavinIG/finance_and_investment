@@ -10,7 +10,7 @@ import java.util.List;
 public interface OrderService {
     OrderResponse createOrder(Long userId, OrderRequest request);
 
-    OrderResponse updateOrder(Long userId, Long orderId, OrderRequestUpdate updateRequest);
+    OrderResponse updateOrder(Long userId, String orderId, OrderRequestUpdate updateRequest);
 
     List<OrderResponse> getOrders(
             Long userId, Integer from, Integer size,

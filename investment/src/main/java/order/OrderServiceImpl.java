@@ -3,18 +3,16 @@ package order;
 import checker.ExistChecker;
 import lombok.RequiredArgsConstructor;
 import oleg.savin.finance.user.UserRepository;
-import order.searchcriteria.OrderSpecifications;
 import order.searchcriteria.SortByField;
 import order.searchcriteria.SortDirection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import user.UserEntity;
 
 import java.util.List;
@@ -27,34 +25,32 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository repository;
     private final ExistChecker checker;
     private final UserRepository userRepository;
+    private final MongoTemplate mongoTemplate;
 
     @Override
     public OrderResponse createOrder(Long userId, OrderRequest request) {
-        logger.info("Creating a new order for user with id: {}", userId);
         checker.isUserExist(userId);
-        logger.debug("User with id {} exists", userId);
         UserEntity owner = userRepository.getReferenceById(userId);
-        logger.debug("Owner of the order: {}", owner.getName());
         OrderEntity entity = OrderMapper.INSTANCE.toEntity(request);
         entity.setOwner(owner);
         OrderEntity saved = repository.save(entity);
-        logger.info("New order created with id: {}", saved.getId());
+        logger.info("Order created with id: {} for user id: {}", saved.getId(), userId);
+
         return OrderMapper.INSTANCE.toResponse(saved);
     }
 
     @Override
-    @Transactional
-    public OrderResponse updateOrder
-            (Long userId, Long orderId, OrderRequestUpdate updateRequest) {
-        logger.info("Updating order with id: {} for user with id: {}", orderId, userId);
+    public OrderResponse updateOrder(
+            Long userId, String orderId, OrderRequestUpdate updateRequest) {
         checker.isUserExist(userId);
         checker.isOrderExist(orderId);
         checker.isUserOwnerOfOrder(userId, orderId);
-        logger.debug("Validation checks completed for order id: {}", orderId);
+
         OrderEntity entity = repository.findById(orderId).orElseThrow();
-        OrderEntity updatedEntity = updateOrderFields(entity, updateRequest);
-        OrderEntity saved = repository.save(updatedEntity);
-        logger.info("Order with id: {} successfully updated", saved.getId());
+        updateOrderFields(entity, updateRequest);
+        OrderEntity saved = repository.save(entity);
+        logger.info("Order updated with id: {}", saved.getId());
+
         return OrderMapper.INSTANCE.toResponse(saved);
     }
 
@@ -62,16 +58,12 @@ public class OrderServiceImpl implements OrderService {
     public List<OrderResponse> getOrders(
             Long userId, Integer from, Integer size,
             SortByField sortByField, SortDirection sortDirection) {
-        logger.info("Fetching orders for user with id: {}, pagination from: {}, size: {}",
-                userId, from, size);
         checker.isUserExist(userId);
-        logger.debug("User with id {} exists", userId);
-        Sort sortParameters = getSortParameters(sortByField, sortDirection);
-        logger.info("Sort parameters {}", sortParameters);
-        Page<OrderEntity> orderEntities = repository.findByOwnerId(
-                userId, PageRequest.of(from, size, sortParameters));
-        logger.info("Found {} orders for user with id: {}",
-                orderEntities.getTotalElements(), userId);
+        PageRequest pageRequest = PageRequest.of(
+                from / size, size, getSortParameters(sortByField, sortDirection));
+        List<OrderEntity> orderEntities = repository.findByOwnerId(userId, pageRequest);
+        logger.info("Fetched {} orders for user id: {}", orderEntities.size(), userId);
+
         return orderEntities.stream()
                 .map(OrderMapper.INSTANCE::toResponse)
                 .collect(Collectors.toList());
@@ -82,53 +74,88 @@ public class OrderServiceImpl implements OrderService {
             Long userId, OrderSearchCriteria searchCriteria,
             SortByField sortByField, SortDirection sortDirection,
             Integer from, Integer size) {
-        logger.info("Searching orders for user with id: {}, with search criteria", userId);
         checker.isUserExist(userId);
-        logger.debug("User with id {} exists", userId);
-        Sort sortParameters = getSortParameters(sortByField, sortDirection);
-        Specification<OrderEntity> specification =
-                OrderSpecifications.searchByCriteria(userId, searchCriteria);
-        Page<OrderEntity> entities = repository.findAll(
-                specification, PageRequest.of(from / size, size, sortParameters));
-        logger.info("Found {} orders matching search criteria for user with id: {}",
-                entities.getTotalElements(), userId);
+
+        Query query = new Query();
+        addSearchCriteria(query, userId, searchCriteria);
+        query.with(getSortParameters(sortByField, sortDirection));
+        query.skip(from).limit(size);
+
+        List<OrderEntity> entities = mongoTemplate.find(query, OrderEntity.class);
+        logger.info("Found {} orders matching criteria for user id: {}", entities.size(), userId);
+
         return entities.stream()
                 .map(OrderMapper.INSTANCE::toResponse)
                 .collect(Collectors.toList());
     }
 
-    private Sort getSortParameters(
-            SortByField sortByField, SortDirection sortDirection) {
-        Sort.Direction direction = sortDirection == SortDirection.DESC ?
-                Sort.Direction.DESC : Sort.Direction.ASC;
-        logger.debug("Applying sort by field: {}, direction: {}",
-                sortByField.getFieldName(), sortDirection);
+    private void addSearchCriteria(
+            Query query, Long userId, OrderSearchCriteria searchCriteria) {
+
+        query.addCriteria(Criteria.where("owner.id").is(userId));
+
+        if (searchCriteria.getTicker() != null) {
+            query.addCriteria(Criteria.where("ticker").is(searchCriteria.getTicker()));
+        }
+        if (searchCriteria.getType() != null) {
+            query.addCriteria(Criteria.where("type").is(searchCriteria.getType()));
+        }
+        if (searchCriteria.getSumMin() != null || searchCriteria.getSumMax() != null) {
+            Criteria sumCriteria = new Criteria();
+            if (searchCriteria.getSumMin() != null) {
+                sumCriteria.gte(searchCriteria.getSumMin());
+            }
+            if (searchCriteria.getSumMax() != null) {
+                sumCriteria.lte(searchCriteria.getSumMax());
+            }
+            query.addCriteria(Criteria.where("sum").is(sumCriteria));
+        }
+
+        if (searchCriteria.getCreationTimeMin() != null || searchCriteria.getCreationTimeMax() != null) {
+            Criteria creationTimeCriteria = new Criteria();
+            if (searchCriteria.getCreationTimeMin() != null) {
+                creationTimeCriteria.gte(searchCriteria.getCreationTimeMin());
+            }
+            if (searchCriteria.getCreationTimeMax() != null) {
+                creationTimeCriteria.lte(searchCriteria.getCreationTimeMax());
+            }
+            query.addCriteria(Criteria.where("creationTime").is(creationTimeCriteria));
+        }
+
+        if (searchCriteria.getClosedTimeMin() != null || searchCriteria.getClosedTimeMax() != null) {
+            Criteria closedTimeCriteria = new Criteria();
+            if (searchCriteria.getClosedTimeMin() != null) {
+                closedTimeCriteria.gte(searchCriteria.getClosedTimeMin());
+            }
+            if (searchCriteria.getClosedTimeMax() != null) {
+                closedTimeCriteria.lte(searchCriteria.getClosedTimeMax());
+            }
+            query.addCriteria(Criteria.where("closedTime").is(closedTimeCriteria));
+        }
+
+        if (searchCriteria.getResultMin() != null || searchCriteria.getResultMax() != null) {
+            Criteria resultCriteria = new Criteria();
+            if (searchCriteria.getResultMin() != null) {
+                resultCriteria.gte(searchCriteria.getResultMin());
+            }
+            if (searchCriteria.getResultMax() != null) {
+                resultCriteria.lte(searchCriteria.getResultMax());
+            }
+            query.addCriteria(Criteria.where("result").is(resultCriteria));
+        }
+    }
+
+    private Sort getSortParameters(SortByField sortByField, SortDirection sortDirection) {
+        Sort.Direction direction =
+                (sortDirection == SortDirection.DESC) ? Sort.Direction.DESC : Sort.Direction.ASC;
         return Sort.by(direction, sortByField.getFieldName());
     }
 
-    private OrderEntity updateOrderFields(
-            OrderEntity entity, OrderRequestUpdate updateRequest) {
-        logger.debug("Updating fields of order with id: {}", entity.getId());
-        if (updateRequest.getTicker() != null) {
-            logger.debug("Updating ticker to: {}", updateRequest.getTicker());
-            entity.setTicker(updateRequest.getTicker());
-        }
-        if (updateRequest.getType() != null) {
-            logger.debug("Updating type to: {}", updateRequest.getType());
-            entity.setType(updateRequest.getType());
-        }
-        if (updateRequest.getSum() != null) {
-            logger.debug("Updating sum to: {}", updateRequest.getSum());
-            entity.setSum(updateRequest.getSum());
-        }
-        if (updateRequest.getClosedTime() != null) {
-            logger.debug("Updating closed time to: {}", updateRequest.getClosedTime());
-            entity.setClosedTime(updateRequest.getClosedTime());
-        }
-        if (updateRequest.getResult() != null) {
-            logger.debug("Updating result to: {}", updateRequest.getResult());
-            entity.setResult(updateRequest.getResult());
-        }
-        return entity;
+    private void updateOrderFields(OrderEntity entity, OrderRequestUpdate updateRequest) {
+        if (updateRequest.getTicker() != null) entity.setTicker(updateRequest.getTicker());
+        if (updateRequest.getType() != null) entity.setType(updateRequest.getType());
+        if (updateRequest.getSum() != null) entity.setSum(updateRequest.getSum());
+        if (updateRequest.getClosedTime() != null) entity.setClosedTime(updateRequest.getClosedTime());
+        if (updateRequest.getResult() != null) entity.setResult(updateRequest.getResult());
     }
 }

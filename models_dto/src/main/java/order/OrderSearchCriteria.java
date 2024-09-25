@@ -19,10 +19,16 @@ public class OrderSearchCriteria {
     private Integer sumMax;
     @JsonFormat(shape = JsonFormat.Shape.STRING,
             pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime creationTime;
+    private LocalDateTime creationTimeMin;
     @JsonFormat(shape = JsonFormat.Shape.STRING,
             pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime closedTime;
+    private LocalDateTime creationTimeMax;
+    @JsonFormat(shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime closedTimeMin;
+    @JsonFormat(shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime closedTimeMax;
     private Integer resultMin;
     private Integer resultMax;
 }

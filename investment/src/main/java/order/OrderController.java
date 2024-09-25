@@ -30,7 +30,7 @@ public class OrderController {
     @PatchMapping("/{userId}/{orderId}")
     public ResponseEntity<OrderResponse> updateOrder(
             @PathVariable Long userId,
-            @PathVariable Long orderId,
+            @PathVariable String orderId,
             @Valid @RequestBody OrderRequestUpdate updateRequest
     ) {
         return ResponseEntity.ok(
