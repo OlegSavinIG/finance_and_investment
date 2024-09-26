@@ -89,6 +89,11 @@ public class OrderServiceImpl implements OrderService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public void deleteOrder(String orderId) {
+        mongoTemplate.remove(orderId);
+    }
+
     private void addSearchCriteria(
             Query query, Long userId, OrderSearchCriteria searchCriteria) {
 

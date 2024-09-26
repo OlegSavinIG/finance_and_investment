@@ -19,4 +19,6 @@ public interface OrderService {
     List<OrderResponse> searchOrders(
             Long userId, OrderSearchCriteria searchCriteria, SortByField sortByField,
             SortDirection sortDirection, Integer from, Integer size);
+
+    void deleteOrder(String orderId);
 }

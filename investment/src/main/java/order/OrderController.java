@@ -63,4 +63,11 @@ public class OrderController {
         return ResponseEntity.ok(
                 service.searchOrders(userId, searchCriteria, sortByField, sortDirection, from, size));
     }
+    @DeleteMapping("/{orderId}")
+    public ResponseEntity<HttpStatus> deleteOrder(
+            @PathVariable String orderId
+    ) {
+        service.deleteOrder(orderId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
 }
