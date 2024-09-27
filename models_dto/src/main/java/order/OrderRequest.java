@@ -1,5 +1,6 @@
 package order;
 
+import annotation.ValidTimeRange;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.Column;
 import jakarta.validation.constraints.NotBlank;
@@ -15,6 +16,9 @@ import java.time.LocalDateTime;
 @Builder
 @RequiredArgsConstructor
 @AllArgsConstructor
+@ValidTimeRange(
+        startField = "creationTime", endField = "closedTime",
+        message = "Creation time must be before closed time")
 public class OrderRequest {
     @NotNull(message = "Ticker cant be empty")
     @NotBlank
