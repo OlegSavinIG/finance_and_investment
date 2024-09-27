@@ -2,7 +2,6 @@ package order;
 
 import checker.ExistChecker;
 import lombok.RequiredArgsConstructor;
-import oleg.savin.finance.user.UserRepository;
 import order.searchcriteria.SortByField;
 import order.searchcriteria.SortDirection;
 import org.slf4j.Logger;
@@ -13,7 +12,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
-import user.UserEntity;
+import repository.StatisticRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,15 +23,12 @@ public class OrderServiceImpl implements OrderService {
     private static final Logger logger = LoggerFactory.getLogger(OrderServiceImpl.class);
     private final OrderRepository repository;
     private final ExistChecker checker;
-    private final UserRepository userRepository;
     private final MongoTemplate mongoTemplate;
-
     @Override
     public OrderResponse createOrder(Long userId, OrderRequest request) {
         checker.isUserExist(userId);
-        UserEntity owner = userRepository.getReferenceById(userId);
         OrderEntity entity = OrderMapper.INSTANCE.toEntity(request);
-        entity.setOwner(owner);
+        entity.setOwner(userId);
         OrderEntity saved = repository.save(entity);
         logger.info("Order created with id: {} for user id: {}", saved.getId(), userId);
 

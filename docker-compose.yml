@@ -15,6 +15,12 @@ services:
       - postgres-data:/var/lib/postgresql/data
     networks:
       - db-network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
 
   # MongoDB - Хранение ордеров и финансовой статистики
   mongo-db:
@@ -26,6 +32,12 @@ services:
       - mongo-data:/data/db
     networks:
       - db-network
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
 
   # ClickHouse - Аналитика действий с ордерами
   clickhouse-db:
@@ -38,6 +50,12 @@ services:
       - clickhouse-data:/var/lib/clickhouse
     networks:
       - db-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8123"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
 
 networks:
   db-network:

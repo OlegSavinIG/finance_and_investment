@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.mapping.Document;
-import user.UserEntity;
 
 import java.time.LocalDateTime;
 
@@ -29,5 +28,5 @@ public class OrderEntity {
             pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime closedTime;
     private Integer result;
-    private UserEntity owner;
+    private Long owner;
 }
