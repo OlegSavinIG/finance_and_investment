@@ -36,6 +36,16 @@ public class OrderController {
         return ResponseEntity.ok(
                 service.updateOrder(userId, orderId, updateRequest));
     }
+    @PatchMapping("/close/{userId}/{orderId}")
+    public ResponseEntity<HttpStatus> closeOrder(
+            @PathVariable Long userId,
+            @PathVariable String orderId,
+            @Valid @RequestBody OrderRequestUpdate requestUpdate
+    ) {
+        service.closeOrder(userId, orderId, requestUpdate);
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
     @GetMapping("/{userId}")
     public ResponseEntity<List<OrderResponse>> getOrders(
             @PathVariable Long userId,

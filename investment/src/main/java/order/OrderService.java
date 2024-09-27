@@ -2,7 +2,6 @@ package order;
 
 import order.searchcriteria.SortByField;
 import order.searchcriteria.SortDirection;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 
@@ -21,4 +20,6 @@ public interface OrderService {
             SortDirection sortDirection, Integer from, Integer size);
 
     void deleteOrder(String orderId);
+
+    void closeOrder(Long userId, String orderId, OrderRequestUpdate requestUpdate);
 }

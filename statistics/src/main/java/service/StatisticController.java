@@ -1,7 +1,8 @@
+package service;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import repository.StatisticRepository;
 import statistic.StatisticEntity;
 
 import java.util.List;

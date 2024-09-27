@@ -12,8 +12,10 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
-import repository.StatisticRepository;
+import service.StatisticRepository;
+import statistic.StatisticEntity;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,11 +26,14 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository repository;
     private final ExistChecker checker;
     private final MongoTemplate mongoTemplate;
+    private final StatisticRepository statisticRepository;
     @Override
     public OrderResponse createOrder(Long userId, OrderRequest request) {
         checker.isUserExist(userId);
         OrderEntity entity = OrderMapper.INSTANCE.toEntity(request);
         entity.setOwner(userId);
+        entity.setOrderStatus(OrderStatus.OPEN);
+        entity.setProgramCreationTime(LocalDateTime.now());
         OrderEntity saved = repository.save(entity);
         logger.info("Order created with id: {} for user id: {}", saved.getId(), userId);
 
@@ -83,6 +88,34 @@ public class OrderServiceImpl implements OrderService {
         return entities.stream()
                 .map(OrderMapper.INSTANCE::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public void closeOrder(Long userId, String orderId, OrderRequestUpdate requestUpdate) {
+        checker.isUserExist(userId);
+        checker.isOrderExist(orderId);
+        checker.isUserOwnerOfOrder(userId, orderId);
+
+        OrderEntity entity = repository.findById(orderId).orElseThrow();
+        updateOrderFields(entity, requestUpdate);
+        entity.setOrderStatus(OrderStatus.CLOSED);
+        createStatistic(entity);
+        repository.save(entity);
+        logger.info("Order with ID: {} closed", entity.getId());
+    }
+
+    private void createStatistic(OrderEntity entity) {
+        logger.info("Saving statistic for order ID: {}", entity.getId());
+        statisticRepository.saveStatistic(
+                StatisticEntity.builder()
+                .closedTime(entity.getClosedTime())
+                .creationTime(entity.getCreationTime())
+                .type(entity.getType())
+                .result(entity.getResult())
+                .ticker(entity.getTicker())
+                .programCreationTime(entity.getProgramCreationTime())
+                .userId(entity.getOwner())
+                .build());
     }
 
     @Override

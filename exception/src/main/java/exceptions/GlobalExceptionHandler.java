@@ -1,3 +1,5 @@
+package exceptions;
+
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -50,6 +52,16 @@ public class GlobalExceptionHandler {
                 String.format("Invalid value '%s' for parameter '%s'.", ex.getValue(), ex.getName()),
                 request.getDescription(false));
         return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
+    }
+    // Обработка StatisticRepositoryException
+    @ExceptionHandler(StatisticRepositoryException.class)
+    public ResponseEntity<ErrorResponse> handleStatisticRepositoryException(
+            StatisticRepositoryException ex, WebRequest request) {
+        ErrorResponse errorDetails = new ErrorResponse(
+                LocalDateTime.now(),
+                "Repository Error: " + ex.getMessage(),
+                request.getDescription(false));
+        return new ResponseEntity<>(errorDetails, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     // Общий обработчик для всех остальных исключений

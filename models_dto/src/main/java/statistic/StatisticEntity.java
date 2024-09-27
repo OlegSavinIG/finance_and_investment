@@ -13,11 +13,11 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 @AllArgsConstructor
 public class StatisticEntity {
-    private Long id;
+    private Long userId;
     private String ticker;
     private LongShort type;
     private Integer result;
     private LocalDateTime creationTime;
     private LocalDateTime closedTime;
-    private Long userId;
+    private LocalDateTime programCreationTime;
 }

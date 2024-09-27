@@ -21,12 +21,16 @@ public class OrderEntity {
     private String ticker;
     private LongShort type;
     private Integer sum;
+    private Integer result;
+    private Long owner;
+    private OrderStatus orderStatus;
     @JsonFormat(shape = JsonFormat.Shape.STRING,
             pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime creationTime;
     @JsonFormat(shape = JsonFormat.Shape.STRING,
             pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime closedTime;
-    private Integer result;
-    private Long owner;
+    @JsonFormat(shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime programCreationTime;
 }
