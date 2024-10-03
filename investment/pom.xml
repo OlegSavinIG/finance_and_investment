@@ -25,16 +25,15 @@
         </dependency>
         <dependency>
             <groupId>oleg.savin.finance</groupId>
-            <artifactId>user</artifactId>
+            <artifactId>config</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>oleg.savin.finance</groupId>
-            <artifactId>statistics</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <scope>compile</scope>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
+
     </dependencies>
 
 </project>
