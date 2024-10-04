@@ -71,7 +71,7 @@ public class OrderServiceImpl implements OrderService {
         checker.isUserExist(userId);
         PageRequest pageRequest = PageRequest.of(
                 from / size, size, getSortParameters(sortByField, sortDirection));
-        List<OrderEntity> orderEntities = repository.findByOwnerId(userId, pageRequest);
+        List<OrderEntity> orderEntities = repository.findByOwner(userId, pageRequest);
         logger.info("Fetched {} orders for user id: {}", orderEntities.size(), userId);
 
         return orderEntities.stream()

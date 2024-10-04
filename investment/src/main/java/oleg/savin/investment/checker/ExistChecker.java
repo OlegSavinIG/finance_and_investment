@@ -27,7 +27,7 @@ public class ExistChecker {
         }
     }
     public void isUserOwnerOfOrder(long userId, String orderId){
-        boolean exists = orderRepository.existsByIdAndOwnerId(orderId, userId);
+        boolean exists = orderRepository.existsByIdAndOwner(orderId, userId);
         if (!exists) {
             throw new EntityNotFoundException(
                     String.format("User with id:%d is not the owner", userId));

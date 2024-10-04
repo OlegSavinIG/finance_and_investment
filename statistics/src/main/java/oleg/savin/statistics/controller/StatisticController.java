@@ -1,6 +1,7 @@
-package oleg.savin.statistics.service;
+package oleg.savin.statistics.controller;
 
 import lombok.RequiredArgsConstructor;
+import oleg.savin.statistics.repository.StatisticRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import oleg.savin.models_dto.statistic.StatisticEntity;

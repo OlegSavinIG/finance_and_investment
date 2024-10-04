@@ -1,4 +1,4 @@
-package oleg.savin.statistics.service;
+package oleg.savin.statistics.repository;
 
 import exceptions.StatisticRepositoryException;
 import lombok.RequiredArgsConstructor;

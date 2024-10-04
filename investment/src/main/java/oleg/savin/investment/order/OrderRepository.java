@@ -11,11 +11,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface OrderRepository extends MongoRepository<OrderEntity, String>, JpaSpecificationExecutor<OrderEntity> {
-    boolean existsByIdAndOwnerId(String orderId, Long ownerId);
+public interface OrderRepository extends MongoRepository<OrderEntity, String> {
+    boolean existsByIdAndOwner(String orderId, Long owner);
     boolean existsById(String orderId);
 
-    List<OrderEntity> findByOwnerId(Long userId, Pageable pageable);
-    List<OrderEntity> searchByCriteria(
-            String ownerId, OrderSearchCriteria searchCriteria, PageRequest pageRequest);
+    List<OrderEntity> findByOwner(Long owner, Pageable pageable);
 }

@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class OrderResponse {
+    private String id;
     private String ticker;
     private LongShort type;
     private Integer sum;
