@@ -131,13 +131,14 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void deleteOrder(String orderId) {
-        mongoTemplate.remove(orderId);
+        Query query = new Query(Criteria.where("_id").is(orderId));
+        mongoTemplate.remove(query, OrderEntity.class);
     }
+
 
     private void addSearchCriteria(
             Query query, Long userId, OrderSearchCriteria searchCriteria) {
-
-        query.addCriteria(Criteria.where("owner.id").is(userId));
+        query.addCriteria(Criteria.where("owner").is(userId));
 
         if (searchCriteria.getTicker() != null) {
             query.addCriteria(Criteria.where("ticker").is(searchCriteria.getTicker()));

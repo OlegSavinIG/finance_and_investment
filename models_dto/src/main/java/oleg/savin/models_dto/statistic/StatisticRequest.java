@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Builder
 @RequiredArgsConstructor
 @AllArgsConstructor
-public class StatisticRequest implements Serializable {
+public class StatisticRequest{
     private Long userId;
     private String ticker;
     private LongShort type;
