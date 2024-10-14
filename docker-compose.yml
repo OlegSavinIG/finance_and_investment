@@ -1,22 +1,20 @@
-version: '3.8'
-
 services:
   # PostgreSQL - Основная база данных
   postgres-db:
     image: postgres:15
     container_name: postgres-db
     environment:
-      POSTGRES_DB: main_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: main_password
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
       - db-network
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres"]
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}"]
       interval: 10s
       retries: 5
       start_period: 30s
@@ -27,7 +25,7 @@ services:
     image: mongo:6.0
     container_name: mongo-db
     ports:
-      - "27017:27017"
+      - "${MONGO_PORT}:${MONGO_PORT}"
     volumes:
       - mongo-data:/data/db
     networks:
@@ -44,14 +42,140 @@ services:
     image: yandex/clickhouse-server:latest
     container_name: clickhouse-db
     ports:
-      - "8123:8123"  # HTTP интерфейс ClickHouse
-      - "9000:9000"  # TCP интерфейс ClickHouse
+      - "${CLICKHOUSE_PORT}:${CLICKHOUSE_PORT}"
+      - "9000:9000"
     volumes:
       - clickhouse-data:/var/lib/clickhouse
     networks:
       - db-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8123"]
+      test: ["CMD", "curl", "-f", "http://localhost:${CLICKHOUSE_PORT}"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+
+  # Eureka Server
+  eureka-server:
+    build:
+      context: ./eureka-server
+      dockerfile: Dockerfile
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    command: [ "java", "-jar", "app.jar" ]
+    networks:
+      - db-network
+    environment:
+      SPRING_SECURITY_USER_NAME: eureka
+      SPRING_SECURITY_USER_PASSWORD: eureka
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "${RABBITMQ_PORT}:${RABBITMQ_PORT}"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    networks:
+      - db-network
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+
+  # Investment Module
+  investment-module:
+    build:
+      context: ./investment
+      dockerfile: Dockerfile
+    container_name: investment-module
+    depends_on:
+      - mongo-db
+      - eureka-server
+      - rabbitmq
+    environment:
+      SPRING_APPLICATION_NAME: ${INVESTMENT_SERVICE_NAME}
+      SERVER_PORT: ${INVESTMENT_SERVICE_PORT}
+      EUREKA_CLIENT_SERVICE_URL_DEFAULT_ZONE: ${EUREKA_SERVER_URL}
+      SPRING_RABBITMQ_HOST: ${RABBITMQ_HOST}
+      SPRING_RABBITMQ_PORT: ${RABBITMQ_PORT}
+      SPRING_DATASOURCE_URL: mongodb://${MONGO_HOST}:${MONGO_PORT}/investment-db
+    ports:
+      - "${INVESTMENT_SERVICE_PORT}:${INVESTMENT_SERVICE_PORT}"
+    networks:
+      - db-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${INVESTMENT_SERVICE_PORT}/actuator/health"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+
+  # User Module
+  user-module:
+    build:
+      context: ./user
+      dockerfile: Dockerfile
+    container_name: user-module
+    depends_on:
+      - postgres-db
+      - eureka-server
+      - rabbitmq
+    environment:
+      SPRING_APPLICATION_NAME: ${USER_SERVICE_NAME}
+      SERVER_PORT: ${USER_SERVICE_PORT}
+      EUREKA_CLIENT_SERVICE_URL_DEFAULT_ZONE: ${EUREKA_SERVER_URL}
+      SPRING_RABBITMQ_HOST: ${RABBITMQ_HOST}
+      SPRING_RABBITMQ_PORT: ${RABBITMQ_PORT}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${USER_SERVICE_PORT}:${USER_SERVICE_PORT}"
+    networks:
+      - db-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${USER_SERVICE_PORT}/actuator/health"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+
+  # Statistic Module
+  statistic-module:
+    build:
+      context: ./statistics
+      dockerfile: Dockerfile
+    container_name: statistic-module
+    depends_on:
+      - clickhouse-db
+      - eureka-server
+      - rabbitmq
+    environment:
+      SPRING_APPLICATION_NAME: ${STATISTIC_SERVICE_NAME}
+      SERVER_PORT: ${STATISTIC_SERVICE_PORT}
+      EUREKA_CLIENT_SERVICE_URL_DEFAULT_ZONE: ${EUREKA_SERVER_URL}
+      SPRING_RABBITMQ_HOST: ${RABBITMQ_HOST}
+      SPRING_RABBITMQ_PORT: ${RABBITMQ_PORT}
+      CLICKHOUSE_URL: jdbc:clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}
+    ports:
+      - "${STATISTIC_SERVICE_PORT}:${STATISTIC_SERVICE_PORT}"
+    networks:
+      - db-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${STATISTIC_SERVICE_PORT}/actuator/health"]
       interval: 10s
       retries: 5
       start_period: 30s
@@ -59,7 +183,9 @@ services:
 
 networks:
   db-network:
+    name: finance_and_investment_db-network
     driver: bridge
+
 
 volumes:
   postgres-data:

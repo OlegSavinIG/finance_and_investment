@@ -1,10 +1,7 @@
 package oleg.savin.investment.order;
 
-import oleg.savin.models_dto.order.OrderEntity;
-import oleg.savin.models_dto.order.OrderSearchCriteria;
-import org.springframework.data.domain.PageRequest;
+import oleg.savin.investment.entity.OrderEntity;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 

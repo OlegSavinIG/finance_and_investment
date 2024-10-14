@@ -1,18 +1,17 @@
 package oleg.savin.investment.order;
 
-import oleg.savin.investment.checker.ExistChecker;
 import lombok.RequiredArgsConstructor;
-import oleg.savin.models_dto.order.OrderEntity;
-import oleg.savin.models_dto.order.OrderMapper;
-import oleg.savin.models_dto.order.OrderRequest;
-import oleg.savin.models_dto.order.OrderRequestUpdate;
-import oleg.savin.models_dto.order.OrderResponse;
-import oleg.savin.models_dto.order.OrderSearchCriteria;
-import oleg.savin.models_dto.order.OrderStatus;
-import oleg.savin.models_dto.statistic.StatisticEntity;
+import oleg.savin.investment.checker.ExistChecker;
+import oleg.savin.investment.entity.OrderEntity;
 import oleg.savin.investment.order.searchcriteria.SortByField;
 import oleg.savin.investment.order.searchcriteria.SortDirection;
-import oleg.savin.models_dto.statistic.StatisticRequest;
+import oleg.savin.investment.entity.OrderMapper;
+import oleg.savin.order_dto.OrderRequest;
+import oleg.savin.order_dto.OrderRequestUpdate;
+import oleg.savin.order_dto.OrderResponse;
+import oleg.savin.order_dto.OrderSearchCriteria;
+import oleg.savin.order_dto.OrderStatus;
+import oleg.savin.statistic_dto.StatisticRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -22,7 +21,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
-import rabbit.RabbitMQConfig;
+import oleg.savin.config.rabbit.RabbitMQConfig;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,6 +35,7 @@ public class OrderServiceImpl implements OrderService {
     private final ExistChecker checker;
     private final MongoTemplate mongoTemplate;
     private final RabbitTemplate rabbitTemplate;
+
     @Override
     public OrderResponse createOrder(Long userId, OrderRequest request) {
         checker.isUserExist(userId);

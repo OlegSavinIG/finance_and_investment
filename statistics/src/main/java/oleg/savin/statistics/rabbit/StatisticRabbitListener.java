@@ -1,11 +1,11 @@
 package oleg.savin.statistics.rabbit;
 
 import lombok.RequiredArgsConstructor;
-import oleg.savin.models_dto.statistic.StatisticRequest;
+import oleg.savin.statistic_dto.StatisticRequest;
 import oleg.savin.statistics.service.StatisticService;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
-import rabbit.RabbitMQConfig;
+import oleg.savin.config.rabbit.RabbitMQConfig;
 
 @Service
 @RequiredArgsConstructor

@@ -2,11 +2,11 @@ package oleg.savin.statistics.repository;
 
 import exceptions.StatisticRepositoryException;
 import lombok.RequiredArgsConstructor;
-import oleg.savin.models_dto.order.LongShort;
+import oleg.savin.order_dto.LongShort;
+import oleg.savin.statistics.entity.StatisticEntity;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-import oleg.savin.models_dto.statistic.StatisticEntity;
 
 import java.util.List;
 

@@ -2,9 +2,9 @@ package oleg.savin.statistics.controller;
 
 import lombok.RequiredArgsConstructor;
 import oleg.savin.statistics.repository.StatisticRepository;
+import oleg.savin.statistics.entity.StatisticEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import oleg.savin.models_dto.statistic.StatisticEntity;
 
 import java.util.List;
 
@@ -14,8 +14,11 @@ import java.util.List;
 public class StatisticController {
 
     private final StatisticRepository statisticRepository;
-
-    @GetMapping("/oleg/savin/finance/user/{userId}")
+    @GetMapping("/test")
+    public String testEndpoint() {
+        return "Controller is working!";
+    }
+    @GetMapping("/user/{userId}")
     public ResponseEntity<List<StatisticEntity>> getStatisticsByUserId(
             @PathVariable Long userId) {
         List<StatisticEntity> statistics = statisticRepository.findByUserId(userId);

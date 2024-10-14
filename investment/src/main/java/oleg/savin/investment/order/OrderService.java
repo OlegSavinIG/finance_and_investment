@@ -1,11 +1,11 @@
 package oleg.savin.investment.order;
 
-import oleg.savin.models_dto.order.OrderRequest;
-import oleg.savin.models_dto.order.OrderResponse;
-import oleg.savin.models_dto.order.OrderSearchCriteria;
 import oleg.savin.investment.order.searchcriteria.SortByField;
 import oleg.savin.investment.order.searchcriteria.SortDirection;
-import oleg.savin.models_dto.order.OrderRequestUpdate;
+import oleg.savin.order_dto.OrderRequest;
+import oleg.savin.order_dto.OrderRequestUpdate;
+import oleg.savin.order_dto.OrderResponse;
+import oleg.savin.order_dto.OrderSearchCriteria;
 
 import java.util.List;
 

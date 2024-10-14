@@ -5,23 +5,26 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import oleg.savin.models_dto.order.OrderRequest;
-import oleg.savin.models_dto.order.OrderResponse;
-import oleg.savin.models_dto.order.OrderSearchCriteria;
 import oleg.savin.investment.order.searchcriteria.SortByField;
 import oleg.savin.investment.order.searchcriteria.SortDirection;
-import oleg.savin.models_dto.order.OrderRequestUpdate;
+import oleg.savin.order_dto.OrderRequest;
+import oleg.savin.order_dto.OrderRequestUpdate;
+import oleg.savin.order_dto.OrderResponse;
+import oleg.savin.order_dto.OrderSearchCriteria;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
 @RestController
 @RequestMapping("/order")
 @RequiredArgsConstructor
 public class OrderController {
     private final OrderService service;
+    @GetMapping("/test")
+    public String testEndpoint() {
+        return "Controller is working!";
+    }
 
     @PostMapping("/{userId}")
     public ResponseEntity<OrderResponse> createOrder(
