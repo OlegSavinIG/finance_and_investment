@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import oleg.savin.investment.order.OrderRepository;
 import oleg.savin.investment.order.feign.UserClient;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 @Component
 @RequiredArgsConstructor

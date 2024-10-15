@@ -7,6 +7,7 @@
 //import org.springframework.test.web.servlet.MockMvc;
 //
 //import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+//import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 //import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 //
 //@SpringBootTest
@@ -19,6 +20,7 @@
 //    @Test
 //    public void testOrderController() throws Exception {
 //        mockMvc.perform(get("/order/test"))
-//                .andExpect(status().isOk());
+//                .andExpect(status().isOk())
+//                .andExpect(content().string("Controller is working!"));
 //    }
 //}
