@@ -1,9 +1,7 @@
 package oleg.savin.user.service;
 
 import lombok.RequiredArgsConstructor;
-import oleg.savin.user.entity.UserEntity;
 import oleg.savin.user_dto.UserResponse;
-import org.springframework.data.rest.webmvc.RepositoryRestController;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -11,9 +9,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/feign")
 @RequiredArgsConstructor
-public class UserController {
+public class UserFeignController {
 
     private final UserService userService;
 

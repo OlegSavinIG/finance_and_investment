@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 @FeignClient(name = "user-service")
 public interface UserClient {
 
-    @GetMapping("/users/{id}")
+    @GetMapping("/feign/{id}")
     UserResponse getUserById(@PathVariable("id") Long id);
-    @GetMapping("/users/exists/{id}")
+    @GetMapping("/feign/exists/{id}")
     boolean existsById(@PathVariable("id") Long userId);
 }

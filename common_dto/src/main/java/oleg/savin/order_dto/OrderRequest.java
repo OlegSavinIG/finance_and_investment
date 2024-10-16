@@ -23,10 +23,8 @@ public class OrderRequest {
     @NotBlank
     private String ticker;
     @NotNull
-    @NotBlank
     private LongShort type;
     @NotNull
-    @NotBlank
     private Integer sum;
     private Integer result;
     @JsonFormat(shape = JsonFormat.Shape.STRING,
