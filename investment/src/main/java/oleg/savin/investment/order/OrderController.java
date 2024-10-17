@@ -16,23 +16,24 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
 @RestController
 @RequestMapping("/order")
 @RequiredArgsConstructor
 public class OrderController {
     private final OrderService service;
-    @GetMapping("/test")
-    public String testEndpoint() {
-        return "Controller is working!";
-    }
 
     @PostMapping("/{userId}")
-    public ResponseEntity<OrderResponse> createOrder(
+    public CompletableFuture<ResponseEntity<OrderResponse>> createOrder(
            @NonNull @PathVariable Long userId,
            @Valid @RequestBody OrderRequest request
     ) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(service.createOrder(userId, request));
+        return service.createOrderAsync(userId, request)
+                .thenApply(orderResponse -> ResponseEntity.status(HttpStatus.CREATED)
+                        .body(orderResponse));
+//        return ResponseEntity.status(HttpStatus.CREATED)
+//                .body(service.createOrder(userId, request));
     }
     @PatchMapping("/{userId}/{orderId}")
     public ResponseEntity<OrderResponse> updateOrder(

@@ -6,8 +6,10 @@ import oleg.savin.order_dto.OrderRequest;
 import oleg.savin.order_dto.OrderRequestUpdate;
 import oleg.savin.order_dto.OrderResponse;
 import oleg.savin.order_dto.OrderSearchCriteria;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 
 public interface OrderService {
@@ -26,4 +28,6 @@ public interface OrderService {
     void deleteOrder(String orderId);
 
     void closeOrder(Long userId, String orderId, OrderRequestUpdate requestUpdate);
+
+    CompletableFuture<OrderResponse> createOrderAsync(Long userId, OrderRequest request);
 }

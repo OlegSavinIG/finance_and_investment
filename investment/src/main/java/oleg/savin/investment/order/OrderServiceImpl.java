@@ -1,11 +1,12 @@
 package oleg.savin.investment.order;
 
 import lombok.RequiredArgsConstructor;
+import oleg.savin.config.rabbit.RabbitMQConfig;
 import oleg.savin.investment.checker.ExistChecker;
 import oleg.savin.investment.entity.OrderEntity;
+import oleg.savin.investment.entity.OrderMapper;
 import oleg.savin.investment.order.searchcriteria.SortByField;
 import oleg.savin.investment.order.searchcriteria.SortDirection;
-import oleg.savin.investment.entity.OrderMapper;
 import oleg.savin.order_dto.OrderRequest;
 import oleg.savin.order_dto.OrderRequestUpdate;
 import oleg.savin.order_dto.OrderResponse;
@@ -20,11 +21,13 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import oleg.savin.config.rabbit.RabbitMQConfig;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 
 @Service
@@ -48,6 +51,22 @@ public class OrderServiceImpl implements OrderService {
 
         return OrderMapper.INSTANCE.toResponse(saved);
     }
+
+    @Override
+    @Async
+    public CompletableFuture<OrderResponse> createOrderAsync(Long userId, OrderRequest request) {
+        return CompletableFuture.supplyAsync(() -> {
+            checker.isUserExist(userId);
+            OrderEntity entity = OrderMapper.INSTANCE.toEntity(request);
+            OrderEntity saved = repository.save(entity);
+            return OrderMapper.INSTANCE.toResponse(saved);
+        }).exceptionally(ex -> {
+            logger.error("Error during order creation", ex);
+            throw new CompletionException("Error creating order", ex);
+        });
+
+    }
+
 
     @Override
     public OrderResponse updateOrder(
@@ -108,14 +127,23 @@ public class OrderServiceImpl implements OrderService {
         OrderEntity entity = repository.findById(orderId).orElseThrow();
         updateOrderFields(entity, requestUpdate);
         entity.setOrderStatus(OrderStatus.CLOSED);
-        createStatistic(entity);
+        sendStatistic(createStatistic(entity));
         repository.save(entity);
         logger.info("Order with ID: {} closed", entity.getId());
     }
 
-    private void createStatistic(OrderEntity entity) {
+    @Async
+    private void sendStatistic(StatisticRequest statisticRequest) {
+        rabbitTemplate.convertAndSend(
+                RabbitMQConfig.STATISTIC_EXCHANGE,
+                RabbitMQConfig.STATISTIC_ROUTING_KEY,
+                statisticRequest);
+        logger.info("Sent statistic to RabbitMQ");
+    }
+
+    private StatisticRequest createStatistic(OrderEntity entity) {
         logger.info("Saving statistic for order ID: {}", entity.getId());
-        StatisticRequest statistic = StatisticRequest.builder()
+        return StatisticRequest.builder()
                 .closedTime(entity.getClosedTime())
                 .creationTime(entity.getCreationTime())
                 .type(entity.getType())
@@ -124,9 +152,6 @@ public class OrderServiceImpl implements OrderService {
                 .programCreationTime(entity.getProgramCreationTime())
                 .userId(entity.getOwner())
                 .build();
-        rabbitTemplate.convertAndSend(
-                RabbitMQConfig.STATISTIC_EXCHANGE, RabbitMQConfig.STATISTIC_ROUTING_KEY, statistic);
-        logger.info("Sent statistic to RabbitMQ for order ID: {}", entity.getId());
     }
 
     @Override
