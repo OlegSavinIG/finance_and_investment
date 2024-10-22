@@ -23,6 +23,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -69,6 +70,7 @@ public class OrderServiceImpl implements OrderService {
 
 
     @Override
+    @Transactional
     public OrderResponse updateOrder(
             Long userId, String orderId, OrderRequestUpdate updateRequest) {
         checker.isUserExist(userId);
@@ -119,6 +121,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public void closeOrder(Long userId, String orderId, OrderRequestUpdate requestUpdate) {
         checker.isUserExist(userId);
         checker.isOrderExist(orderId);
