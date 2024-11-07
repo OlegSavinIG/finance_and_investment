@@ -1,6 +1,7 @@
 package oleg.savin.statistics.controller;
 
 import lombok.RequiredArgsConstructor;
+import oleg.savin.statistic_dto.StatisticResponse;
 import oleg.savin.statistics.entity.StatisticSearchCriteria;
 import oleg.savin.statistics.repository.StatisticRepository;
 import oleg.savin.statistics.entity.StatisticEntity;
@@ -18,16 +19,14 @@ public class StatisticController {
     private final StatisticService statisticService;
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<StatisticEntity>> getStatisticsByUserId(
+    public ResponseEntity<List<StatisticResponse>> getStatisticsByUserId(
             @PathVariable Long userId) {
-        List<StatisticEntity> statistics = statisticService.findByUserId(userId);
-        return ResponseEntity.ok(statistics);
+        return ResponseEntity.ok(statisticService.findByUserId(userId));
     }
     @GetMapping("/search")
-    public ResponseEntity<List<StatisticEntity>> searchStatistics(
+    public ResponseEntity<List<StatisticResponse>> searchStatistics(
             @RequestBody StatisticSearchCriteria criteria) {
-        List<StatisticEntity> statistics = statisticService.findByCriteria(criteria);
-        return ResponseEntity.ok(statistics);
+        return ResponseEntity.ok(statisticService.findByCriteria(criteria));
     }
 
 }
