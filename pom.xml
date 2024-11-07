@@ -24,6 +24,7 @@
         <module>config</module>
         <module>eureka-server</module>
         <module>common_dto</module>
+        <module>adminstatistic</module>
     </modules>
 
     <properties>
