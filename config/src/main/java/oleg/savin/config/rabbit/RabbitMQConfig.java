@@ -1,4 +1,5 @@
 package oleg.savin.config.rabbit;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
@@ -10,6 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@Slf4j
 public class RabbitMQConfig {
 
     public static final String STATISTIC_QUEUE = "statisticQueue";
@@ -28,19 +30,20 @@ public class RabbitMQConfig {
 
     @Bean
     public Queue statisticQueue() {
-        System.out.println("Creating statisticQueue");
+        log.info("Creating statisticQueue");
         return new Queue(STATISTIC_QUEUE, true);
     }
 
     @Bean
     public TopicExchange statisticExchange() {
-        System.out.println("Creating statisticExchange");
+        log.info("Creating statisticExchange");
         return new TopicExchange(STATISTIC_EXCHANGE);
     }
 
 
     @Bean
     public Binding statisticBinding(Queue statisticQueue, TopicExchange statisticExchange) {
+        log.info("Binding statisticQueue to statisticExchange with routing key 'statistic.routingKey'");
         return BindingBuilder.bind(statisticQueue).to(statisticExchange).with(STATISTIC_ROUTING_KEY);
     }
 

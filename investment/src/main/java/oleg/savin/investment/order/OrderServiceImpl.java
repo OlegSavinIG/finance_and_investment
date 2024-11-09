@@ -1,7 +1,6 @@
 package oleg.savin.investment.order;
 
 import lombok.RequiredArgsConstructor;
-import oleg.savin.config.rabbit.RabbitMQConfig;
 import oleg.savin.investment.checker.ExistChecker;
 import oleg.savin.investment.entity.OrderEntity;
 import oleg.savin.investment.entity.OrderMapper;
@@ -15,20 +14,19 @@ import oleg.savin.order_dto.OrderStatus;
 import oleg.savin.statistic_dto.StatisticRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,7 +36,8 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository repository;
     private final ExistChecker checker;
     private final MongoTemplate mongoTemplate;
-    private final RabbitTemplate rabbitTemplate;
+    private final StatisticSenderService statisticSenderService;
+    private final AsyncOrderService asyncOrderService;
 
     @Override
     public OrderResponse createOrder(Long userId, OrderRequest request) {
@@ -54,18 +53,9 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    @Async
     public CompletableFuture<OrderResponse> createOrderAsync(Long userId, OrderRequest request) {
-        return CompletableFuture.supplyAsync(() -> {
-            checker.isUserExist(userId);
-            OrderEntity entity = OrderMapper.INSTANCE.toEntity(request);
-            OrderEntity saved = repository.save(entity);
-            return OrderMapper.INSTANCE.toResponse(saved);
-        }).exceptionally(ex -> {
-            logger.error("Error during order creation", ex);
-            throw new CompletionException("Error creating order", ex);
-        });
-
+        checker.isUserExist(userId);
+        return asyncOrderService.createOrderAsync(request);
     }
 
 
@@ -130,18 +120,9 @@ public class OrderServiceImpl implements OrderService {
         OrderEntity entity = repository.findById(orderId).orElseThrow();
         updateOrderFields(entity, requestUpdate);
         entity.setOrderStatus(OrderStatus.CLOSED);
-        sendStatistic(createStatistic(entity));
+        statisticSenderService.sendStatistic(createStatistic(entity));
         repository.save(entity);
         logger.info("Order with ID: {} closed", entity.getId());
-    }
-
-    @Async
-    private void sendStatistic(StatisticRequest statisticRequest) {
-        rabbitTemplate.convertAndSend(
-                RabbitMQConfig.STATISTIC_EXCHANGE,
-                RabbitMQConfig.STATISTIC_ROUTING_KEY,
-                statisticRequest);
-        logger.info("Sent statistic to RabbitMQ");
     }
 
     private StatisticRequest createStatistic(OrderEntity entity) {
@@ -164,60 +145,38 @@ public class OrderServiceImpl implements OrderService {
     }
 
 
-    private void addSearchCriteria(
-            Query query, Long userId, OrderSearchCriteria searchCriteria) {
-        query.addCriteria(Criteria.where("owner").is(userId));
+    private void addSearchCriteria(Query query, Long userId, OrderSearchCriteria searchCriteria) {
+        List<Criteria> criteriaList = new ArrayList<>();
 
-        if (searchCriteria.getTicker() != null) {
-            query.addCriteria(Criteria.where("ticker").is(searchCriteria.getTicker()));
-        }
-        if (searchCriteria.getType() != null) {
-            query.addCriteria(Criteria.where("type").is(searchCriteria.getType()));
-        }
+        criteriaList.add(Criteria.where("owner").is(userId));
+
+        Optional.ofNullable(searchCriteria.getTicker())
+                .ifPresent(ticker -> criteriaList.add(Criteria.where("ticker").is(ticker)));
+
+        Optional.ofNullable(searchCriteria.getType())
+                .ifPresent(type -> criteriaList.add(Criteria.where("type").is(type)));
+
         if (searchCriteria.getSumMin() != null || searchCriteria.getSumMax() != null) {
-            Criteria sumCriteria = new Criteria();
-            if (searchCriteria.getSumMin() != null) {
-                sumCriteria.gte(searchCriteria.getSumMin());
-            }
-            if (searchCriteria.getSumMax() != null) {
-                sumCriteria.lte(searchCriteria.getSumMax());
-            }
-            query.addCriteria(Criteria.where("sum").is(sumCriteria));
+            Criteria sumCriteria = Criteria.where("sum");
+            if (searchCriteria.getSumMin() != null)
+                sumCriteria = sumCriteria.gte(searchCriteria.getSumMin());
+            if (searchCriteria.getSumMax() != null)
+                sumCriteria = sumCriteria.lte(searchCriteria.getSumMax());
+            criteriaList.add(sumCriteria);
         }
 
         if (searchCriteria.getCreationTimeMin() != null || searchCriteria.getCreationTimeMax() != null) {
-            Criteria creationTimeCriteria = new Criteria();
-            if (searchCriteria.getCreationTimeMin() != null) {
-                creationTimeCriteria.gte(searchCriteria.getCreationTimeMin());
-            }
-            if (searchCriteria.getCreationTimeMax() != null) {
-                creationTimeCriteria.lte(searchCriteria.getCreationTimeMax());
-            }
-            query.addCriteria(Criteria.where("creationTime").is(creationTimeCriteria));
+            Criteria creationTimeCriteria = Criteria.where("creationTime");
+            if (searchCriteria.getCreationTimeMin() != null)
+                creationTimeCriteria = creationTimeCriteria.gte(searchCriteria.getCreationTimeMin());
+            if (searchCriteria.getCreationTimeMax() != null)
+                creationTimeCriteria = creationTimeCriteria.lte(searchCriteria.getCreationTimeMax());
+            criteriaList.add(creationTimeCriteria);
         }
 
-        if (searchCriteria.getClosedTimeMin() != null || searchCriteria.getClosedTimeMax() != null) {
-            Criteria closedTimeCriteria = new Criteria();
-            if (searchCriteria.getClosedTimeMin() != null) {
-                closedTimeCriteria.gte(searchCriteria.getClosedTimeMin());
-            }
-            if (searchCriteria.getClosedTimeMax() != null) {
-                closedTimeCriteria.lte(searchCriteria.getClosedTimeMax());
-            }
-            query.addCriteria(Criteria.where("closedTime").is(closedTimeCriteria));
-        }
-
-        if (searchCriteria.getResultMin() != null || searchCriteria.getResultMax() != null) {
-            Criteria resultCriteria = new Criteria();
-            if (searchCriteria.getResultMin() != null) {
-                resultCriteria.gte(searchCriteria.getResultMin());
-            }
-            if (searchCriteria.getResultMax() != null) {
-                resultCriteria.lte(searchCriteria.getResultMax());
-            }
-            query.addCriteria(Criteria.where("result").is(resultCriteria));
-        }
+        query.addCriteria(new Criteria().andOperator(criteriaList.toArray(new Criteria[0])));
     }
+
 
     private Sort getSortParameters(SortByField sortByField, SortDirection sortDirection) {
         Sort.Direction direction =
