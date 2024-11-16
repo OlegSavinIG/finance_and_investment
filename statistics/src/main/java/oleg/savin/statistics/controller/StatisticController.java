@@ -3,8 +3,6 @@ package oleg.savin.statistics.controller;
 import lombok.RequiredArgsConstructor;
 import oleg.savin.statistic_dto.StatisticResponse;
 import oleg.savin.statistics.entity.StatisticSearchCriteria;
-import oleg.savin.statistics.repository.StatisticRepository;
-import oleg.savin.statistics.entity.StatisticEntity;
 import oleg.savin.statistics.service.StatisticService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
