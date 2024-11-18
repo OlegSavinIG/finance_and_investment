@@ -13,6 +13,30 @@ import java.time.LocalDateTime;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUserNotFoundException(
+            UserNotFoundException ex, WebRequest request) {
+        ErrorResponse errorDetails = new ErrorResponse(
+                LocalDateTime.now(), ex.getMessage(), request.getDescription(false));
+        return new ResponseEntity<>(errorDetails, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(OrderNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleOrderNotFoundException(
+            OrderNotFoundException ex, WebRequest request) {
+        ErrorResponse errorDetails = new ErrorResponse(
+                LocalDateTime.now(), ex.getMessage(), request.getDescription(false));
+        return new ResponseEntity<>(errorDetails, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(UnauthorizedOrderAccessException.class)
+    public ResponseEntity<ErrorResponse> handleUnauthorizedOrderAccessException(
+            UnauthorizedOrderAccessException ex, WebRequest request) {
+        ErrorResponse errorDetails = new ErrorResponse(
+                LocalDateTime.now(), ex.getMessage(), request.getDescription(false));
+        return new ResponseEntity<>(errorDetails, HttpStatus.FORBIDDEN);
+    }
+
     // Обработка исключения при отсутствии сущности
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleEntityNotFoundException(
@@ -43,6 +67,7 @@ public class GlobalExceptionHandler {
                 request.getDescription(false));
         return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
     }
+
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleTypeMismatchException(
             MethodArgumentTypeMismatchException ex,
@@ -53,6 +78,7 @@ public class GlobalExceptionHandler {
                 request.getDescription(false));
         return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
     }
+
     // Обработка StatisticRepositoryException
     @ExceptionHandler(StatisticRepositoryException.class)
     public ResponseEntity<ErrorResponse> handleStatisticRepositoryException(

@@ -1,4 +1,4 @@
-package oleg.savin.statistics.clickhouseconfig;
+package oleg.savin.clickhouseconfig;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;

@@ -13,7 +13,6 @@ public class ErrorResponse {
         this.details = details;
     }
 
-    // Геттеры и сеттеры
     public LocalDateTime getTimestamp() {
         return timestamp;
     }

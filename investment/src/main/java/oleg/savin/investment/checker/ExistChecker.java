@@ -1,11 +1,12 @@
 package oleg.savin.investment.checker;
 
-import jakarta.persistence.EntityNotFoundException;
+import exceptions.OrderNotFoundException;
+import exceptions.UnauthorizedOrderAccessException;
+import exceptions.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
 import oleg.savin.investment.order.OrderRepository;
 import oleg.savin.investment.order.feign.UserClient;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
 @Component
 @RequiredArgsConstructor
@@ -14,24 +15,20 @@ public class ExistChecker {
     private final UserClient userClient;
 
     public void isUserExist(long userId) {
-        boolean existsById = userClient.existsById(userId);
-        if (!existsById) {
-            throw new EntityNotFoundException(
-                    String.format("User with id:%d not exist", userId));
+        if (!userClient.existsById(userId)) {
+            throw new UserNotFoundException(userId);
         }
     }
+
     public void isOrderExist(String orderId) {
-        boolean existsById = orderRepository.existsById(orderId);
-        if (!existsById) {
-            throw new EntityNotFoundException(
-                    String.format("Order with id:%d not exist", orderId));
+        if (!orderRepository.existsById(orderId)) {
+            throw new OrderNotFoundException(orderId);
         }
     }
-    public void isUserOwnerOfOrder(long userId, String orderId){
-        boolean exists = orderRepository.existsByIdAndOwner(orderId, userId);
-        if (!exists) {
-            throw new EntityNotFoundException(
-                    String.format("User with id:%d is not the owner", userId));
+
+    public void isUserOwnerOfOrder(long userId, String orderId) {
+        if (!orderRepository.existsByIdAndOwner(orderId, userId)) {
+            throw new UnauthorizedOrderAccessException(userId, orderId);
         }
     }
 }

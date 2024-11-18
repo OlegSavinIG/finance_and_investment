@@ -1,8 +1,9 @@
 package oleg.savin.statistics.controller;
 
 import lombok.RequiredArgsConstructor;
-import oleg.savin.statistics.repository.StatisticRepository;
-import oleg.savin.statistics.entity.StatisticEntity;
+import oleg.savin.statistic_dto.StatisticResponse;
+import oleg.savin.statistics.entity.StatisticSearchCriteria;
+import oleg.savin.statistics.service.StatisticService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,15 +14,17 @@ import java.util.List;
 @RequiredArgsConstructor
 public class StatisticController {
 
-    private final StatisticRepository statisticRepository;
-    @GetMapping("/test")
-    public String testEndpoint() {
-        return "Controller is working!";
-    }
+    private final StatisticService statisticService;
+
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<StatisticEntity>> getStatisticsByUserId(
+    public ResponseEntity<List<StatisticResponse>> getStatisticsByUserId(
             @PathVariable Long userId) {
-        List<StatisticEntity> statistics = statisticRepository.findByUserId(userId);
-        return ResponseEntity.ok(statistics);
+        return ResponseEntity.ok(statisticService.findByUserId(userId));
     }
+    @GetMapping("/search")
+    public ResponseEntity<List<StatisticResponse>> searchStatistics(
+            @RequestBody StatisticSearchCriteria criteria) {
+        return ResponseEntity.ok(statisticService.findByCriteria(criteria));
+    }
+
 }

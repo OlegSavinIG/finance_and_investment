@@ -20,6 +20,28 @@ services:
       start_period: 30s
       timeout: 5s
 
+  # MySQL - Для хранения статистики
+  mysql-db:
+    image: mysql:8.0
+    container_name: mysql-db
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "${MYSQL_PORT}:${MYSQL_PORT}"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - db-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 5
+      start_period: 40s
+      timeout: 5s
+
   # MongoDB - Хранение ордеров и финансовой статистики
   mongo-db:
     image: mongo:6.0
@@ -160,7 +182,7 @@ services:
       dockerfile: Dockerfile
     container_name: statistic-module
     depends_on:
-      - clickhouse-db
+      - mysql-db
       - eureka-server
       - rabbitmq
     environment:
@@ -169,25 +191,25 @@ services:
       EUREKA_CLIENT_SERVICE_URL_DEFAULT_ZONE: ${EUREKA_SERVER_URL}
       SPRING_RABBITMQ_HOST: ${RABBITMQ_HOST}
       SPRING_RABBITMQ_PORT: ${RABBITMQ_PORT}
-      CLICKHOUSE_URL: jdbc:clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}
-      CLICKHOUSE_DATASOURCE_URL: ${CLICKHOUSE_DATASOURCE_URL}
-      CLICKHOUSE_DATASOURCE_DRIVER_CLASS_NAME: ${CLICKHOUSE_DATASOURCE_DRIVER_CLASS_NAME}
-      CLICKHOUSE_DATASOURCE_USERNAME: ${CLICKHOUSE_DATASOURCE_USERNAME}
-      CLICKHOUSE_DATASOURCE_PASSWORD: ${CLICKHOUSE_DATASOURCE_PASSWORD}
-      CLICKHOUSE_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: ${CLICKHOUSE_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE}
-      CLICKHOUSE_DATASOURCE_HIKARI_MINIMUM_IDLE: ${CLICKHOUSE_DATASOURCE_HIKARI_MINIMUM_IDLE}
-      CLICKHOUSE_DATASOURCE_HIKARI_IDLE_TIMEOUT: ${CLICKHOUSE_DATASOURCE_HIKARI_IDLE_TIMEOUT}
-      CLICKHOUSE_DATASOURCE_HIKARI_POOL_NAME: ${CLICKHOUSE_DATASOURCE_HIKARI_POOL_NAME}
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:${MYSQL_PORT}/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQL8Dialect
     ports:
       - "${STATISTIC_SERVICE_PORT}:${STATISTIC_SERVICE_PORT}"
     networks:
       - db-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${STATISTIC_SERVICE_PORT}/actuator/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:${STATISTIC_SERVICE_PORT}/actuator/health" ]
       interval: 10s
       retries: 5
       start_period: 30s
       timeout: 5s
+    command: ["sh", "-c", "./wait-for-it.sh mysql-db:${MYSQL_PORT} -- java -jar app.jar"]
+
+
 
 networks:
   db-network:
@@ -199,3 +221,4 @@ volumes:
   postgres-data:
   mongo-data:
   clickhouse-data:
+  mysql-data:
